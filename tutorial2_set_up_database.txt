@@ -1,0 +1,172 @@
+1. DATABASE SET UP
+    Now, open up mysite/settings.py. It’s a normal Python module with module-level variables representing Django settings.
+    By default, the configuration uses SQLite. 
+    If you’re new to databases, or you’re just interested in trying Django, this is the easiest choice. 
+    SQL, to avoid database-switching headaches down the road.SQLite is included in Python, so you won’t need to install anything else to support your database. 
+    When starting your first real project, however, you may want to use a more scalable database like Postgre
+
+    If you wish to use another database, install the appropriate database bindings 
+    and change the following keys in the DATABASES 'default' item to match your database connection settings:
+        + ENGINE – Either 'django.db.backends.sqlite3', 'django.db.backends.postgresql', 'django.db.backends.mysql', or 'django.db.backends.oracle'. Other backends are also available.
+        + NAME – The name of your database. If you’re using SQLite, the database will be a file on your computer; in that case, NAME should be the full absolute path, including filename, of that file. 
+        The default value, BASE_DIR / 'db.sqlite3', will store the file in your project directory.
+
+    While you’re editing mysite/settings.py, set TIME_ZONE to your time zone.
+
+    By default, INSTALLED_APPS contains the following apps, all of which come with Django:
+        - django.contrib.admin – The admin site. You’ll use it shortly.
+        - django.contrib.auth – An authentication system.
+        - django.contrib.contenttypes – A framework for content types.
+        - django.contrib.sessions – A session framework.
+        - django.contrib.messages – A messaging framework.
+        - django.contrib.staticfiles – A framework for managing static files.
+
+    $ python manage.py migrate
+
+    The migrate command looks at the INSTALLED_APPS setting and creates any necessary database tables according to the database settings in your mysite/settings.py file and 
+    the database migrations shipped with the app (we’ll cover those later). 
+    You’ll see a message for each migration it applies. 
+
+2. CREATING MODELS
+    A model is the single, definitive source of information about your data. 
+    It contains the essential fields and behaviors of the data you’re storing. 
+    Django follows the DRY Principle. 
+    The goal is to define your data model in one place and automatically derive things from it.
+
+    This includes the migrations - unlike in Ruby On Rails, for example, 
+    migrations are entirely derived from your models file, 
+    and are essentially a history that Django can roll through to update your database schema to match your current models.    
+
+    Here, each model is represented by a class that subclasses django.db.models.Model. 
+    Each model has a number of class variables, each of which represents a database field in the model.
+    Each field is represented by an instance of a Field class
+
+    The name of each Field instance (e.g. question_text or pub_date) is the field’s name, in machine-friendly format. 
+    You’ll use this value in your Python code, and your database will use it as the column name.
+
+    These concepts are represented by Python classes. Edit the polls/models.py file so it looks like this:
+        from django.db import models
+
+
+        class Question(models.Model):
+            question_text = models.CharField(max_length=200)
+            pub_date = models.DateTimeField('date published')
+
+
+        class Choice(models.Model):
+            question = models.ForeignKey(Question, on_delete=models.CASCADE)
+            choice_text = models.CharField(max_length=200)
+            votes = models.IntegerField(default=0)
+
+    Finally, note a relationship is defined, using ForeignKey. 
+    That tells Django each Choice is related to a single Question. 
+
+3. ACTIVATING MODELS
+    That small bit of model code gives Django a lot of information. With it, Django is able to:
+        - Create a database schema (CREATE TABLE statements) for this app.    
+        - Create a Python database-access API for accessing Question and Choice objects.
+    
+    But first we need to tell our project that the polls app is installed.
+    
+    ** Django apps are “pluggable”: You can use an app in multiple projects, and you can distribute apps, 
+    because they don’t have to be tied to a given Django installation.
+
+    To include the app in our project, we need to add a reference to its configuration class in the INSTALLED_APPS setting. 
+    The PollsConfig class is in the polls/apps.py file, so its dotted path is 'polls.apps.PollsConfig'. 
+    Edit the mysite/settings.py file and add that dotted path to the INSTALLED_APPS setting. It’ll look like this:
+        INSTALLED_APPS = [
+            'polls.apps.PollsConfig',
+            'django.contrib.admin',
+            'django.contrib.auth',
+            'django.contrib.contenttypes',
+            'django.contrib.sessions',
+            'django.contrib.messages',
+            'django.contrib.staticfiles',
+        ]
+
+    Now Django knows to include the polls app. Let’s run another command:
+        $ python manage.py makemigrations polls
+
+    By running makemigrations, you’re telling Django that you’ve made some changes to your models (in this case, you’ve made new ones) 
+    and that you’d like the changes to be stored as a migration.
+
+    Migrations are how Django stores changes to your models (and thus your database schema) - they’re files on disk. 
+    You can read the migration for your new model if you like; it’s the file polls/migrations/0001_initial.py.
+
+    There’s a command that will run the migrations for you and manage your database schema automatically - that’s called migrate, 
+    and we’ll come to it in a moment - but first, let’s see what SQL that migration would run. 
+    The sqlmigrate command takes migration names and returns their SQL:
+        $ python manage.py sqlmigrate polls 0001
+
+    Note the following:
+        - The exact output will vary depending on the database you are using. 
+        - Table names are automatically generated by combining the name of the app (polls) 
+        and the lowercase name of the model – question and choice. (You can override this behavior.)
+        - Primary keys (IDs) are added automatically. (You can override this, too.)
+        - By convention, Django appends "_id" to the foreign key field name. (Yes, you can override this, as well.)
+        - The foreign key relationship is made explicit by a FOREIGN KEY constraint. Don’t worry about the DEFERRABLE parts; 
+        it’s telling PostgreSQL to not enforce the foreign key until the end of the transaction.
+        - It’s tailored to the database you’re using, so database-specific field types such as auto_increment (MySQL), serial (PostgreSQL), or integer primary key autoincrement (SQLite) are handled for you automatically. Same goes for the quoting of field names – e.g., using double quotes or single quotes.
+        - The sqlmigrate command doesn’t actually run the migration on your database - instead, 
+        it prints it to the screen so that you can see what SQL Django thinks is required. 
+        It’s useful for checking what Django is going to do or if you have database administrators who require SQL scripts for changes.
+    
+    Now, run migrate again to create those model tables in your database:
+        $ python manage.py migrate
+
+    The migrate command takes all the migrations that haven’t been applied (Django tracks which ones are applied using a special table in your database called django_migrations) 
+    and runs them against your database - essentially, 
+    synchronizing the changes you made to your models with the schema in the database.
+
+    Migrations are very powerful and let you change your models over time, as you develop your project, 
+    without the need to delete your database or tables and make new ones - it specializes in upgrading your database live, without losing data. 
+
+    remember the three-step guide to making model changes:
+        - Change your models (in models.py).
+        - Run python manage.py makemigrations to create migrations for those changes
+        - Run python manage.py migrate to apply those changes to the database.       
+    
+    The reason that there are separate commands to make and apply migrations is because you’ll commit migrations to your version control system 
+    and ship them with your app; they not only make your development easier, they’re also usable by other developers and in production.
+
+4. PLAYING WITH THE API
+    Now, let’s hop into the interactive Python shell and play around with the free API Django gives you. 
+    To invoke the Python shell, use this command:
+        $ python manage.py shell
+
+    It’s important to add __str__() methods to your models, not only for your own convenience when dealing with the interactive prompt, 
+    but also because objects’ representations are used throughout Django’s automatically-generated admin.
+
+5. INTRODUCING THE DJANGO ADMIN
+    Generating admin sites for your staff or clients to add, change, and delete content is tedious work that doesn’t require much creativity. 
+    For that reason, Django entirely automates creation of admin interfaces for models.
+
+    * creating an admin user
+        $ python manage.py createsuperuser
+
+    Now, open a web browser and go to “/admin/” on your local domain – e.g., http://127.0.0.1:8000/admin/. 
+
+    * make the poll app modifiable in the admin
+    Only one more thing to do: we need to tell the admin that Question objects have an admin interface. 
+    To do this, open the polls/admin.py file, and edit it to look like this:
+        from django.contrib import admin
+
+        from .models import Question
+
+        admin.site.register(Question)
+
+    * explore the free admin functionality
+    Things to note here:
+        - The form is automatically generated from the Question model.
+        - The different model field types (DateTimeField, CharField) correspond to the appropriate HTML input widget. 
+        Each type of field knows how to display itself in the Django admin.
+        - Each DateTimeField gets free JavaScript shortcuts. 
+        Dates get a “Today” shortcut and calendar popup, and times get a “Now” shortcut and a convenient popup that lists commonly entered times.
+    
+    The bottom part of the page gives you a couple of options:
+        - Save – Saves changes and returns to the change-list page for this type of object.
+        - Save and continue editing – Saves changes and reloads the admin page for this object.
+        - Save and add another – Saves changes and loads a new, blank form for this type of object.
+        - Delete – Displays a delete confirmation page.
+
+
