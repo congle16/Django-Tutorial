@@ -1,0 +1,31 @@
+1. DATABASE SET UP
+    Now, open up mysite/settings.py. It’s a normal Python module with module-level variables representing Django settings.
+    By default, the configuration uses SQLite. 
+    If you’re new to databases, or you’re just interested in trying Django, this is the easiest choice. 
+    SQL, to avoid database-switching headaches down the road.SQLite is included in Python, so you won’t need to install anything else to support your database. 
+    When starting your first real project, however, you may want to use a more scalable database like Postgre
+
+    If you wish to use another database, install the appropriate database bindings 
+    and change the following keys in the DATABASES 'default' item to match your database connection settings:
+        + ENGINE – Either 'django.db.backends.sqlite3', 'django.db.backends.postgresql', 'django.db.backends.mysql', or 'django.db.backends.oracle'. Other backends are also available.
+        + NAME – The name of your database. If you’re using SQLite, the database will be a file on your computer; in that case, NAME should be the full absolute path, including filename, of that file. 
+        The default value, BASE_DIR / 'db.sqlite3', will store the file in your project directory.
+
+    While you’re editing mysite/settings.py, set TIME_ZONE to your time zone.
+
+    By default, INSTALLED_APPS contains the following apps, all of which come with Django:
+        - django.contrib.admin – The admin site. You’ll use it shortly.
+        - django.contrib.auth – An authentication system.
+        - django.contrib.contenttypes – A framework for content types.
+        - django.contrib.sessions – A session framework.
+        - django.contrib.messages – A messaging framework.
+        - django.contrib.staticfiles – A framework for managing static files.
+
+    $ python manage.py migrate
+
+    The migrate command looks at the INSTALLED_APPS setting and creates any necessary database tables according to the database settings in your mysite/settings.py file and 
+    the database migrations shipped with the app (we’ll cover those later). 
+    You’ll see a message for each migration it applies. 
+
+2. CREATING MODELS
+    
