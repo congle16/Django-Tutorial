@@ -28,7 +28,7 @@
     You’ll see a message for each migration it applies. 
 
 2. CREATING MODELS
-    A model is the single, definitive source of information about your data. 
+    A model is the single, definitive source of information about your data.
     It contains the essential fields and behaviors of the data you’re storing. 
     Django follows the DRY Principle. 
     The goal is to define your data model in one place and automatically derive things from it.
